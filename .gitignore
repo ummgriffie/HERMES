@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Logs and data
+*.log
+hermes_live.log
+keltner_live.log
+trades.jsonl
+latest_balance.json
+learning_memory.json
+decisions.jsonl
+telegram_sent.jsonl
+trade_results_*.json
+k_deals.txt
+transcript.txt
+postmortem_*.md
+result.txt
+_check_result.txt
+dash_check.txt
+
+# Config with secrets
+config.json
+telegram_bot_token.txt
+*.key
+*.pem
+
+# IDE and OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temp and test
+*.tmp
+test_*.py
+place_one_*.py
+simulate_*.js
+run_*.bat
+*_backup*.py
+backfill_trades.py
+get_transcript.py
+_deal_dump.py
+
+# Render dashboard build artifacts (if any)
+render_dashboard/node_modules/
+
+# MT5 and trading temp
+*.csv
+*.xlsx

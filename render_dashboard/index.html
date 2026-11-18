@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HERMES • StarNetOS</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0f">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=VT323&amp;display=swap');
+        
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .retro { font-family: 'VT323', monospace; letter-spacing: 1px; }
+        
+        .panel {
+            background-color: #111113;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            letter-spacing: 2px;
+            font-weight: 600;
+            color: #f4a261;
+        }
+
+        .metric-value {
+            font-size: 30px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .strength-bar {
+            height: 16px;
+            background: linear-gradient(90deg, #f59e0b, #3b82f6);
+            transition: width 800ms cubic-bezier(0.32, 0.72, 0, 1);
+            border-radius: 9999px;
+        }
+
+        .sprite-canvas {
+            image-rendering: crisp-edges;
+            border: 2px solid #27272a;
+            border-radius: 8px;
+            background: #0a0a0f;
+        }
+
+        .stat-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .stat-card:hover {
+            transform: translateY(-1px);
+        }
+
+        .modern-header {
+            background: #0a0a0f;
+            border-bottom: 1px solid #27272a;
+        }
+    </style>
+</head>
+<body class="bg-[#0a0a0f] text-gray-200">
+    <!-- Top Bar -->
+    <div class="modern-header sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="flex items-center gap-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl retro">H</span>
+                    </div>
+                    <span class="text-3xl font-semibold tracking-tighter">HERMES</span>
+                </div>
+                <div class="px-3 py-1 rounded-full text-xs bg-zinc-900 border border-zinc-700 text-orange-400 flex items-center gap-x-1.5">
+                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span class="retro">STARNETOS LIVE</span>
+                </div>
+            </div>
+            <div class="text-xs text-zinc-400">Read-only • Synced from local bot</div>
+        </div>
+    </div>
+
+    <div class="max-w-screen-2xl mx-auto px-8 py-8">
+        
+        <!-- Sprite World -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <div>
+                    <div class="text-orange-400 text-xs tracking-[2.5px] retro">STARNETOS — FLOOR 01</div>
+                    <div class="text-3xl font-semibold tracking-tight">HERMES Sprite World</div>
+                </div>
+                <div class="text-xs text-zinc-400">Click rooms to command HERMES</div>
+            </div>
+
+            <div class="panel p-4">
+                <canvas id="spriteCanvas" width="920" height="250" class="sprite-canvas w-full cursor-crosshair"></canvas>
+                
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <button onclick="moveToRoom('comms')" class="px-3 py-1 text-xs border border-zinc-700 hover:border-orange-500 rounded-md transition-colors">COMMS</button>
+                    <button onclick="moveToRoom('workbench')" class="px-3 py-1 text-xs border border-zinc-700 hover:border-orange-500 rounded-md transition-colors">WORKBENCH</button>
+                    <button onclick="moveToRoom('intel')" class="px-3 py-1 text-xs border border-zinc-700 hover:border-orange-500 rounded-md transition-colors">INTEL</button>
+                    <button onclick="moveToRoom('studio')" class="px-3 py-1 text-xs border border-zinc-700 hover:border-orange-500 rounded-md transition-colors">RECORDING STUDIO</button>
+                    <button onclick="moveToRoom('dock')" class="px-3 py-1 text-xs border border-zinc-700 hover:border-orange-500 rounded-md transition-colors">DOCK</button>
+                </div>
+                <div id="sprite-status" class="text-center text-xs text-zinc-400 mt-2 font-mono"></div>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="panel p-5 stat-card">
+                <div class="text-xs text-zinc-400">BALANCE</div>
+                <div id="balance" class="metric-value">$28.00</div>
+            </div>
+            <div class="panel p-5 stat-card">
+                <div class="text-xs text-zinc-400">EQUITY</div>
+                <div id="equity" class="metric-value">$28.00</div>
+            </div>
+            <div class="panel p-5 stat-card">
+                <div class="text-xs text-zinc-400">WIN RATE</div>
+                <div id="winrate" class="metric-value text-emerald-400">29.6%</div>
+            </div>
+            <div class="panel p-5 stat-card">
+                <div class="text-xs text-zinc-400">TOTAL P/L</div>
+                <div id="total-pl" class="metric-value text-emerald-400">+$12.40</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Equity Histogram -->
+            <div class="lg:col-span-7 panel p-5">
+                <div class="flex justify-between items-baseline mb-3">
+                    <div class="section-title">EQUITY CURVE</div>
+                    <div class="text-xs text-zinc-500">Histogram view</div>
+                </div>
+                <canvas id="equityChart" height="85"></canvas>
+            </div>
+
+            <!-- Market Strength -->
+            <div class="lg:col-span-5 panel p-5">
+                <div class="section-title mb-4">MARKET STRENGTH</div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span>XAUUSD#</span>
+                            <span id="xau-val">72%</span>
+                        </div>
+                        <div class="bg-zinc-800 rounded-full h-[14px] overflow-hidden">
+                            <div id="xau-bar" class="strength-bar" style="width: 72%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span>GBPJPY#</span>
+                            <span id="gbp-val">58%</span>
+                        </div>
+                        <div class="bg-zinc-800 rounded-full h-[14px] overflow-hidden">
+                            <div id="gbp-bar" class="strength-bar" style="width: 58%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span>SPX500</span>
+                            <span id="spx-val">41%</span>
+                        </div>
+                        <div class="bg-zinc-800 rounded-full h-[14px] overflow-hidden">
+                            <div id="spx-bar" class="strength-bar" style="width: 41%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signals -->
+            <div class="lg:col-span-5 panel p-5">
+                <div class="section-title mb-3">RECENT SIGNALS</div>
+                <div id="signals" class="space-y-2 text-sm"></div>
+            </div>
+
+            <!-- GBrain -->
+            <div class="lg:col-span-7 panel p-5">
+                <div class="section-title mb-3">GBRAIN LEARNING</div>
+                <div class="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <div class="text-2xl font-semibold" id="gb-trades">27</div>
+                        <div class="text-zinc-400 text-xs">TRADES</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-semibold text-emerald-400" id="gb-winrate">29.6%</div>
+                        <div class="text-zinc-400 text-xs">WIN RATE</div>
+                    </div>
+                    <div class="text-xs leading-snug text-zinc-300">
+                        Top: Range rejection<br>
+                        ORB + safe trail
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const data = {
+            balance: 28.00,
+            equity: 28.00,
+            winRate: 29.6,
+            totalPL: 12.40,
+            trades: 27
+        };
+
+        function updateUI() {
+            document.getElementById('balance').textContent = '$' + data.balance.toFixed(2);
+            document.getElementById('equity').textContent = '$' + data.equity.toFixed(2);
+            document.getElementById('winrate').textContent = data.winRate + '%';
+            document.getElementById('total-pl').textContent = (data.totalPL >= 0 ? '+' : '') + '$' + data.totalPL.toFixed(2);
+            document.getElementById('gb-trades').textContent = data.trades;
+            document.getElementById('gb-winrate').textContent = data.winRate + '%';
+        }
+
+        // Animated Strength Bars (Orange weak → Blue strong)
+        function updateStrengthBars() {
+            const pairs = [
+                { key: 'xau', val: 72 },
+                { key: 'gbp', val: 58 },
+                { key: 'spx', val: 41 }
+            ];
+
+            pairs.forEach(p => {
+                const bar = document.getElementById(p.key + '-bar');
+                const val = document.getElementById(p.key + '-val');
+                if (!bar || !val) return;
+
+                bar.style.width = p.val + '%';
+                val.textContent = p.val + '%';
+
+                if (p.val < 50) {
+                    bar.style.background = 'linear-gradient(to right, #f59e0b, #d97706)';
+                } else if (p.val < 70) {
+                    bar.style.background = 'linear-gradient(to right, #f59e0b, #3b82f6)';
+                } else {
+                    bar.style.background = 'linear-gradient(to right, #3b82f6, #2563eb)';
+                }
+            });
+        }
+
+        // Equity Histogram
+        function createEquityHistogram() {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['T21','T22','T23','T24','T25','T26','T27'],
+                    datasets: [{
+                        label: 'Equity',
+                        data: [26.8, 27.3, 26.9, 27.8, 27.5, 28.1, 28.0],
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4,
+                        barThickness: 18
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#27272a', lineWidth: 0.5 }, ticks: { color: '#52525b', font: { size: 10 } } },
+                        y: { grid: { color: '#27272a', lineWidth: 0.5 }, ticks: { color: '#52525b', font: { size: 10 } } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Signals
+        function loadSignals() {
+            const el = document.getElementById('signals');
+            const signals = [
+                { t: "10:41", s: "XAUUSD", dir: "LONG", r: "ORB + Fib 61.8%" },
+                { t: "10:19", s: "GBPJPY", dir: "SHORT", r: "Keltner Break" },
+                { t: "09:58", s: "XAUUSD", dir: "LONG", r: "Hammer + MACD" }
+            ];
+            
+            el.innerHTML = '';
+            signals.forEach(sig => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center text-xs py-1 px-2 rounded hover:bg-zinc-900';
+                div.innerHTML = `
+                    <div><span class="font-mono text-zinc-400">${sig.t}</span> <span class="font-medium">${sig.s}</span></div>
+                    <div class="text-right">
+                        <span class="${sig.dir === 'LONG' ? 'text-emerald-400' : 'text-red-400'}">${sig.dir}</span>
+                        <span class="text-zinc-400 ml-2 text-[10px]">${sig.r}</span>
+                    </div>
+                `;
+                el.appendChild(div);
+            });
+        }
+
+        // Sprite Canvas
+        let canvas, ctx, x = 150, y = 130, tx = 150, ty = 130;
+
+        function initSprite() {
+            canvas = document.getElementById('spriteCanvas');
+            ctx = canvas.getContext('2d');
+
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                tx = e.clientX - rect.left;
+                ty = e.clientY - rect.top;
+            });
+
+            setInterval(() => {
+                const dx = tx - x;
+                const dy = ty - y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 2) {
+                    x += dx / dist * 3.5;
+                    y += dy / dist * 3.5;
+                }
+                draw();
+            }, 1000/30);
+
+            draw();
+            document.getElementById('sprite-status').textContent = 'HERMES standing by';
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Body
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(x - 5, y - 10, 10, 16);
+            
+            // Head
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(x - 4, y - 16, 8, 6);
+            
+            // Eyes
+            ctx.fillStyle = '#111';
+            ctx.fillRect(x - 2, y - 14, 1.5, 1.5);
+            ctx.fillRect(x + 1, y - 14, 1.5, 1.5);
+            
+            // Legs
+            ctx.fillStyle = '#166534';
+            ctx.fillRect(x - 3, y + 6, 2, 6);
+            ctx.fillRect(x + 1, y + 6, 2, 6);
+        }
+
+        function moveToRoom(room) {
+            const map = {
+                'comms': {x: 170, y: 80},
+                'workbench': {x: 380, y: 130},
+                'intel': {x: 620, y: 85},
+                'studio': {x: 810, y: 150},
+                'dock': {x: 290, y: 180}
+            };
+            
+            if (map[room]) {
+                tx = map[room].x;
+                ty = map[room].y;
+                document.getElementById('sprite-status').textContent = `HERMES moving to ${room.toUpperCase()}...`;
+                
+                setTimeout(() => {
+                    document.getElementById('sprite-status').textContent = `HERMES is now in ${room.toUpperCase()}`;
+                }, 1600);
+            }
+        }
+
+        function init() {
+            updateUI();
+            updateStrengthBars();
+            createEquityHistogram();
+            loadSignals();
+            initSprite();
+        }
+
+        window.onload = init;
+
+// PWA registration
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+}
+    </script>
+</body>
+</html>
